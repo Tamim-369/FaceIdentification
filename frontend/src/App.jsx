@@ -47,11 +47,14 @@ const WebcamCapture = () => {
 
   const detectFaces = async () => {
     if (webcamRef.current && !loading) {
+      setDataLoading(true);
       const videoEl = webcamRef.current.video;
       const detections = await faceapi
         .detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks()
         .withFaceDescriptors();
+
+      let foundMatch = false;
 
       for (const user of users) {
         const img = await faceapi.fetchImage(user.imageUrl);
@@ -68,20 +71,17 @@ const WebcamCapture = () => {
 
           results.forEach((result) => {
             if (result.distance < 0.5) {
-              setMatchedFace(true);
+              foundMatch = true;
               setUserData(user);
-              alert(`Matched with ${user.username}`);
-            } else {
-              setMatchedFace(false);
-              alert("Unable to match the face. Please try again.");
+              alert(`Matched with ${user.username}`); // Ensure this is reached
             }
           });
-
-          drawDetections(detections);
-        } else {
-          console.error("Reference image not found or no faces detected.");
         }
       }
+
+      setMatchedFace(foundMatch);
+      setDataLoading(false);
+      drawDetections(detections);
     }
   };
 
