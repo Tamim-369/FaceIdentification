@@ -9,6 +9,7 @@ const WebcamCapture = () => {
   const [dataLoading, setDataLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
+  const [userData, setUserData] = useState({});
   const getSetUser = async () => {
     try {
       const response = await fetch("http://localhost:5000/users");
@@ -23,8 +24,6 @@ const WebcamCapture = () => {
       console.error("Error fetching users:", error);
     }
   };
-  const imageUrl =
-    "https://res.cloudinary.com/dd5sixsi4/image/upload/v1726567317/2024-09-17-055844_cn0mdl.jpg";
 
   useEffect(() => {
     const loadModels = async () => {
@@ -54,30 +53,34 @@ const WebcamCapture = () => {
         .withFaceLandmarks()
         .withFaceDescriptors();
 
-      const img = await faceapi.fetchImage(imageUrl);
-      const referenceDescriptor = await faceapi
-        .detectSingleFace(img)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+      for (const user of users) {
+        const img = await faceapi.fetchImage(user.imageUrl);
+        const referenceDescriptor = await faceapi
+          .detectSingleFace(img)
+          .withFaceLandmarks()
+          .withFaceDescriptor();
 
-      if (referenceDescriptor) {
-        const faceMatcher = new faceapi.FaceMatcher(referenceDescriptor);
-        const results = detections.map((fd) =>
-          faceMatcher.findBestMatch(fd.descriptor)
-        );
+        if (referenceDescriptor) {
+          const faceMatcher = new faceapi.FaceMatcher(referenceDescriptor);
+          const results = detections.map((fd) =>
+            faceMatcher.findBestMatch(fd.descriptor)
+          );
 
-        results.forEach((result) => {
-          if (result.distance < 0.5) {
-            setMatchedFace(true);
-          } else {
-            setMatchedFace(false);
-            alert("Unable to match the face. Please try again.");
-          }
-        });
+          results.forEach((result) => {
+            if (result.distance < 0.5) {
+              setMatchedFace(true);
+              setUserData(user);
+              alert(`Matched with ${user.username}`);
+            } else {
+              setMatchedFace(false);
+              alert("Unable to match the face. Please try again.");
+            }
+          });
 
-        drawDetections(detections);
-      } else {
-        console.error("Reference image not found or no faces detected.");
+          drawDetections(detections);
+        } else {
+          console.error("Reference image not found or no faces detected.");
+        }
       }
     }
   };
